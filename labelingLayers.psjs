@@ -1,0 +1,663 @@
+/*
+this is a UXP script for Photoshop
+that labels layers on document.(except group layer)
+you could set clause that layer's style.
+(like locked or visible)
+
+requirement
+later than Photoshop ver 23.5
+
+you could use this one for free.
+and also you can refer or copy part of this script in your script code.
+ */
+
+const batchPlay = require("photoshop").action.batchPlay;
+const { app } = require("photoshop");
+const script = await require("uxp").script;
+const executionContext = script.executionContext;
+const { hostControl } = executionContext;
+
+
+/**
+ * label class
+ * this one has labeling method and lables on layer 
+ */
+class Labelor {
+   static labelyellowColor = "yellowColor";
+   static labelred = "red";
+   static labelnone = "none";
+   static labelorange = "orange";
+   static labelgrain = "grain";
+   static labelblue = "blue";
+   static labelviolet = "violet";
+   static labelgray = "gray";
+
+   /**
+    * set the label
+    * @param label @type {yellowColor|red|none|orange...}
+    */
+   constructor (label) {
+       this._label = label;
+   };
+
+   get label () {
+       return Labelor[`label${this._label}`];
+   };
+
+   set reSetLabel (label) {
+       this._label = label;
+   };
+
+   /**
+    * labeling method
+    * @param id @type {string} layer id
+    * @returns @type {Promise<void>}
+    */
+   async labelingLayer (id) {
+       try {
+        const result = await batchPlay(
+        [
+           {
+              _obj: "set",
+              _target: [
+                 {
+                    _ref: "layer",
+                    _id: id,
+                 }
+              ],
+              to: {
+                 _obj: "layer",
+                 color: {
+                    _enum: "color",
+                    _value: this.label
+                 }
+              },
+              _options: {
+                 dialogOptions: "dontDisplay"
+              }
+           }
+        ],{
+        });
+       return result;
+       } catch (e) {
+           app.showAlert(e);
+           return false;
+       }
+   }
+};
+
+/**
+ * all type of labels
+ */
+const labels = [
+   Labelor.labelyellowColor,
+   Labelor.labelred,
+   Labelor.labelnone,
+   Labelor.labelorange,
+   Labelor.labelgrain,
+   Labelor.labelblue,
+   Labelor.labelviolet,
+   Labelor.labelgray
+];
+
+//dialog size
+const DIALOG_WIDTH = '500px';
+const DIALOG_HEIGHT = '650px';
+
+/**
+ * modal window class object
+ */
+ class ModalWindow {
+   constructor (dialog, header, main, aside, footer) {
+       this._dialog = dialog;
+       this._dialog.width = DIALOG_WIDTH;
+       this._dialog.height = DIALOG_HEIGHT;
+       this.header = header;
+       this.main = main;
+       this.aside = aside;
+       this.footer = footer;
+
+       this._dialog.style.padding = '20px';
+       this._dialog.style.boxSizing = 'border-box';
+   }
+   
+   /**
+    * unit elements under dialog window
+    */
+   uniteElms () {
+       this._dialog.appendChild(this.header);
+       this._dialog.appendChild(this.main);
+       this._dialog.appendChild(this.aside);
+       this._dialog.appendChild(this.footer);
+   }
+
+   get dialog () {
+     return this._dialog;
+   }
+};
+
+/**
+ * base of HTMLElement class
+ * all of HTMLElement will succeed this
+ */
+class HTMLDocBase {
+   constructor (elm, className , id = null) {
+      this.elm = elm;
+      this.elm.className = className;
+      this.events = new Set();//events you registed
+      if (id !== null) this.elm.id = id;
+   };
+
+   /**
+    * 
+    * @param styleObj @type {Object}
+    * object contains css property
+    */
+   setStyles (styleObj) {
+      Object.entries(styleObj).forEach(([key, value]) => {
+          this.elm.style[key] = value;
+      })
+   };
+
+   /**
+    * 
+    * @param elms @type {HTMLEllement}
+    * added html elements under this element
+    */
+   addElements (elms) {
+      if (Array.isArray(elms)){
+        for (let i=0;i<elms.length;i++) {
+           this.elm.appendChild(elms[i].elm);
+        }
+      } else {
+         this.elm.appendChild(elms.elm);
+      }
+   };
+
+   removeAllChildren () {
+      while (this.elm.firstChild) {
+         this.elm.removeChild(this.elm.firstChild);
+      };
+   }
+
+   getThroughClass (className) {
+      return this.elm.querySelectorAll(`.${className}`);
+   };
+
+   getThtoughId (id) {
+      return this.elm.getElementById(id);
+   };
+
+   /**
+    * register event
+    * if the class has already same event name,
+    * it'll reject.
+    * @param evetName @type {string}
+    * @param callback @type {Functon}
+    * @returns @type {void}
+    */
+   addEvent (evetName, callback) {
+      if (this.events.has(evetName)) {
+         app.showAlert('it already has the event');
+         return;
+      }
+      this.events.add(evetName, {
+         evetName,
+         callback
+      });
+      this.elm.addEventListener(evetName, callback);
+   };
+
+   removeEvent (evetName) {
+      const target = this.events.has(evetName);
+      if (target === undefined) {
+         app.showAlert("this element doen't have the event");
+         return;
+      }
+      this.elm.removeEventListener(target.eventName, target.callback);
+   }
+};
+
+const H1TitleStyle = {
+   color: '#fff',
+   textSize: '15px'
+}
+
+class H1Title extends HTMLDocBase {
+   constructor (text, className, id) {
+      super(document.createElement('h1'), className, id);
+      this.setStyles(H1TitleStyle);
+      this.elm.textContent = text;
+   }
+}
+
+const HeaderAreaStyle = {
+   width: '100%',
+   height: '30px'
+}
+
+/**
+ * header
+ */
+class HeaderArea extends HTMLDocBase {
+   constructor (className, id) {
+      super(document.createElement('header'), className , id);
+      this.setStyles(HeaderAreaStyle);
+      this.addElements(
+         new H1Title('labelingLayers', 'header_title', 'title')
+      )
+   };
+};
+
+class QuietBooleanButton extends HTMLDocBase {
+   constructor (
+      name,
+      className,
+      id,
+      checked = false
+   ) {
+      super(document.createElement('sp-action-button'), className, id);
+      this.elm.textContent = checked;
+      this.elm.name = name;
+      this.addEvent('click', () => {
+         this.elm.textContent = this.elm.textContent === 'true' ? 'false' : 'true';
+      })
+   }
+}
+
+class SPCheckbox extends HTMLDocBase {
+   constructor (
+      name,
+      className,
+      id,
+      checked = false
+      ) {
+      super(document.createElement('sp-checkbox'), className, id);
+      this.elm.checked = checked;
+      this.elm.name = name;
+      this.elm.textContent = id;
+      this.elm.id = id;
+   };
+};
+
+const singleCheckBoxLiStyle = {
+   width: '200px',
+   height: '50px',
+   display: 'flex',
+   justifyContent: 'space-between',
+   alignItems: 'center'
+};
+
+class SPCheckLi extends HTMLDocBase {
+   /**
+    * 
+    * @param @type {
+    *   name: string,
+    *   className: string,
+    *   id:string,
+    *   checked: boolean
+    * }
+    */
+   constructor (name, className, id, checked) {
+      super (
+         document.createElement('li'),
+         'sp-list',
+      );
+      this.setStyles(singleCheckBoxLiStyle);
+      this.addElements([
+      new SPCheckbox(
+         name,
+         className,
+         id,
+         checked
+      ),
+      new QuietBooleanButton(
+         name,
+         className,
+         id
+      )
+      ]);
+   };
+};
+
+const SpCheckListStyle = {
+   width: '100%',
+   height: 'auto',
+   padding: '10px',
+   boxSizing: 'border',
+   listStyle: 'none',
+};
+
+/**
+ * checkbox list wrapper
+ */
+class SPCheckBoxList extends HTMLDocBase {
+   static name = 'checkbox-clause';
+   constructor (
+      {
+        className, 
+        id
+      }) {
+      super(
+        document.createElement('ul'),
+        className,
+        id
+      );
+      this.setStyles(SpCheckListStyle);
+   };
+
+   /**
+    * 
+    * @param listBox @type {{
+    *   className: string
+    *   id: string,
+    *   checked: boolean
+    * }[]}
+    */
+   addCheckBoxList (listBoxes) {
+      this.addElements(
+         listBoxes.map(listbox => {
+            return new SPCheckLi(
+               SPCheckBoxList.name,
+               listbox.className,
+               listbox.id,
+               listbox.checked
+            )
+         })
+      )
+   }
+};
+
+class SPActionButton extends HTMLDocBase {
+   constructor (text, className, id) {
+      super(
+         document.createElement('sp-action-button'),
+         className,
+         id
+      );
+      this.elm.textContent = text;
+   };
+};
+
+const ASIDEWIDTH = '100px';
+const CENTERHEIGHT = '220px';
+
+const MainAreaAStyle = {
+   width: `300px`,
+   height: CENTERHEIGHT
+}
+
+class MainArea extends HTMLDocBase {
+   constructor (className, id) {
+      super (document.createElement('main'), className, id);
+      this.setStyles(MainAreaAStyle);
+   }
+};
+
+const asideAreaStyle = {
+   width: ASIDEWIDTH,
+   height: CENTERHEIGHT,
+   padding: '10px',
+   boxSizing: 'border'
+}
+
+class AsideArea extends HTMLDocBase {
+   constructor () {
+      super(document.createElement('aside'), 'aside', 'labelArea');
+      this.setStyles(asideAreaStyle);
+   };
+};
+
+class SPRadio extends HTMLDocBase {
+   constructor (name, id, checked = false) {
+      super(document.createElement('sp-radio'), 'sp-radio', id);
+      this.elm.textContent = id;
+      this.elm.name = name;
+      this.elm.value = id;
+      this.checked = checked;
+   }
+};
+
+/**
+ * radio box wrapper
+ * it's necessary for Spectrum radio box
+ */
+class SPRadioGroup extends HTMLDocBase {
+   constructor () {
+      super(document.createElement('sp-radio-group'), 'sp-radio-group', 'labelRadios');
+      this.addElements(
+         labels.map((labelName, i) => {
+         return new SPRadio(
+            'label', labelName, i === 0 ? true : false
+         );
+         })
+      );
+   }
+};
+
+const footerStyle = {
+   width: '100%',
+   height: '40px',
+   display: 'flex',
+   jusfyContent: 'flex-start',
+   gap: '10px'
+}
+
+class FooterArea extends HTMLDocBase {
+   constructor () {
+      super(
+         document.createElement('footer'),
+         'footer',
+         'footerArea'
+      );
+      this.setStyles(footerStyle);
+   }
+}
+
+/**
+ * clause class
+ * this validates layer type
+ */
+class ClauseCensor {
+   constructor (clauseObjs) {
+      this.clause = clauseObjs;//set the clauses
+   };
+
+   isOpcity100 (layer) {
+      return layer.opacity === 100;
+   };
+
+   isVisible (layer) {
+      return layer.visible;
+   };
+
+   isPixelLayer (layer) {
+      return layer.kind === 'pixel';
+   };
+
+   anyLock (layer) {
+      return layer.locked;
+   };
+
+   /**
+    * if every clause matches the condition, it returns true.
+    * @param layer @type {{clause: "isVisible", useIt: boolean, flag: boolean}}
+    * @returns {boolean}
+    */
+   censorLayer (layer) {
+      return this.clause.every(clauseObj => {
+         return clauseObj.flag === this[clauseObj.clause](layer);
+      });
+   };
+};
+
+/**
+ * validate and label layers.
+ * checking all of the layers recursively
+ * @param layers @type {layer Object}
+ * @param censor @type {ClauseCensor}
+ * @param labelor @type {Labelor}
+ */
+const investigateLayer = async (layers, censor, labelor) => {
+   await Promise.allSettled(layers.map(async layer => {
+      //validate the layer type
+      if (layer.kind !== 'group' && censor.censorLayer(layer)) {
+         await labelor.labelingLayer(layer.id);//labeling the layer
+      }
+      if (layer.kind === 'group') {
+         //if the layer has layers, it checks recursively
+         await investigateLayer(layer.layers, censor, labelor);
+      }
+   }));
+};
+
+/**
+ * remove all of the lables
+ * @param layers @type {layer Object}
+ * @param labelor @type {Labelor}
+ */
+const removeAllLayers = async (layers, labelor) => {
+   await Promise.allSettled(layers.map(async layer => {
+      await labelor.labelingLayer(layer.id);
+      if (layer.kind === 'group') {
+         await removeAllLayers(layer.layers, labelor);
+      }
+   }));
+}
+
+const callBackLabeling = async () => {
+   const label = [...document.getElementsByClassName('sp-radio')].find(elm => elm.checked);
+   if (label === undefined) {
+      await app.showAlert('check any label');
+      return;
+   }
+   const btnAndChecked = [...document.querySelectorAll('.sp-list')].map(elm => {
+      return{
+            clause: elm.children[0].id,
+            useIt: elm.children[0].checked,
+            flag: elm.children[1].textContent === 'true' ? true : false
+      };
+   }).filter(obj => obj.useIt);
+   if (btnAndChecked.length === 0) {
+      await app.showAlert('check any clause');
+      return;
+   };
+   const labelor = new Labelor(label.id);
+   const censor = new ClauseCensor(btnAndChecked);
+   const suspensionID = await hostControl.suspendHistory({
+      documentID: app.activeDocument.id,
+      name: 'labeling layers'
+   });
+   await investigateLayer(app.activeDocument.layers, censor, labelor);
+   await hostControl.resumeHistory(suspensionID);
+}
+
+const createFooterArea = () => {
+   const footerArea = new FooterArea();
+   const closeButton = new SPActionButton('close', 'sp-button', 'closebutton');
+   const labelButton = new SPActionButton('labeling', 'sp-button', 'labeling');
+   const removeButton = new SPActionButton('remove all', 'sp-button', 'remove all');
+   footerArea.addElements([closeButton, labelButton, removeButton]);
+   labelButton.addEvent('click', async () => await callBackLabeling());
+   removeButton.addEvent('click', async () => {
+      const suspensionID = await hostControl.suspendHistory({
+         documentID: app.activeDocument.id,
+         name: 'labeling layers'
+      });
+      await removeAllLayers(app.activeDocument.layers, new Labelor(Labelor.labelnone));
+      await hostControl.resumeHistory(suspensionID);
+   });
+   return { footerArea, closeButton };
+};
+
+/**
+ * clauses array
+ */
+const clauses = [
+   {
+      className: 'clauselist',
+      id: 'isOpcity100',
+      checked: false
+   },
+   {
+      className: 'clauselist',
+      id: 'isVisible',
+      checked: false
+   },
+   {
+      className: 'clauselist',
+      id: 'isPixelLayer',
+      checked: false
+   },
+   {
+      className: 'clauselist',
+      id: 'anyLock',
+      checked: false
+   }
+];
+
+const createMainArea = () => {
+   const mainArea = new MainArea();
+   const listWrapper = new SPCheckBoxList('listWrapper', 'clause-list');
+   listWrapper.addCheckBoxList(clauses);
+   mainArea.addElements(listWrapper);
+   return mainArea;
+};
+
+const createAsideArea = () => {
+   const radioWrapper = new SPRadioGroup();
+   const asideArea = new AsideArea();
+   asideArea.addElements(radioWrapper);
+   return asideArea;
+};
+
+/**
+ * create dialog window and set HTMLElements
+ * @returns @type {ModalWindow}
+ */
+ const createDialog = async (footerArea, mainArea) => {
+   const header = new HeaderArea();
+
+   const modalWindow = new ModalWindow(
+       document.createElement("dialog"),
+       header.elm,
+       mainArea.elm,
+       createAsideArea().elm,
+       footerArea.elm
+   );
+   modalWindow.uniteElms();
+   
+   return modalWindow;
+};
+
+/**
+ * show modal Dialog
+ * this is await function.
+ * as you can see, the function never return any value
+ * untill you click the cancel button.
+ * 
+ * and Promise awaits you click the cancel button.
+ * once you click it, it return Promise
+ * and finish it.
+ * @returns @type {Promise<void>}
+ */
+ const showModalWindow = async() => {
+   const { footerArea, closeButton } = createFooterArea();
+   const modal = await createDialog(footerArea, createMainArea());
+   document.body.appendChild(modal.dialog).showModal();
+   return new Promise((resolve, reject) => {
+       closeButton.addEvent('click', () => {
+           modal.dialog.close();
+           resolve("dialog cancelled");
+       })
+       modal.dialog.addEventListener("close", () => {
+           reject("dialog closed");
+       });
+   });
+}
+
+try {
+   await showModalWindow();
+} catch (e) {
+   await app.showAlert(e);
+}

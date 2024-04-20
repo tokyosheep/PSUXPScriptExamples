@@ -1,0 +1,20 @@
+/**
+ * this is simple Photoshop UXP Script.
+ * just creating new layers simultaneously.
+ */
+
+
+const { app } = require("photoshop");
+
+if ( app.documents.length < 1 ) {
+    await app.showAlert("there isn't any document on Photoshop ");
+    return;
+}
+
+const names = ["banana", "apple", "lemon"];
+
+await Promise.all(names.map(async (name) => {
+    const lay = await app.activeDocument.layers.add();
+    lay.name = name;
+}));
+await app.showAlert("created");

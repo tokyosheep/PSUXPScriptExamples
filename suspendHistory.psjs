@@ -1,0 +1,111 @@
+const { app } = require("photoshop");
+const script = await require("uxp").script;
+const batchPlay = require("photoshop").action.batchPlay;
+
+if (app.documents.length < 1) return;
+
+const executionContext = script.executionContext;
+const { hostControl } = executionContext;
+const docID = app.activeDocument.id;
+
+const selectAll = async () =>  {
+    await batchPlay(
+    [
+       {
+          _obj: "set",
+          _target: [
+             {
+                _ref: "channel",
+                _property: "selection"
+             }
+          ],
+          to: {
+             _enum: "ordinal",
+             _value: "allEnum"
+          },
+          _options: {
+             dialogOptions: "dontDisplay"
+          }
+       }
+    ],{
+    });    
+};
+
+const deSelection = async () => {
+    await batchPlay(
+    [
+       {
+          _obj: "set",
+          _target: [
+             {
+                _ref: "channel",
+                _property: "selection"
+             }
+          ],
+          to: {
+             _enum: "ordinal",
+             _value: "none"
+          },
+          _options: {
+             dialogOptions: "dontDisplay"
+          }
+       }
+    ],{
+    });        
+};
+
+const fillColor = async () => {
+    await batchPlay(
+    [
+       {
+          _obj: "fill",
+          using: {
+             _enum: "fillContents",
+             _value: "color"
+          },
+          color: {
+             _obj: "HSBColorClass",
+             hue: {
+                _unit: "angleUnit",
+                _value: 33.8818359375
+             },
+             saturation: 41.568627450980394,
+             brightness: 99.6078431372549
+          },
+          opacity: {
+             _unit: "percentUnit",
+             _value: 100
+          },
+          mode: {
+             _enum: "blendMode",
+             _value: "normal"
+          },
+          _options: {
+             dialogOptions: "dontDisplay"
+          }
+       }
+    ],{
+    });
+};
+
+/*
+suspend history and register active document id
+ヒストリーを登録した名前でまとめる。ドキュメントIDを登録 
+*/
+const suspensionID = await hostControl.suspendHistory({
+    "documentID": docID,
+    "name": "suspend history"
+});
+
+const myLayer = await app.activeDocument.createLayer({
+    name: "mylayer"
+});
+
+await selectAll();
+await fillColor();
+await deSelection();
+
+myLayer.opacity = 40;
+await hostControl.resumeHistory(suspensionID);
+
+await app.showAlert("finished!!");

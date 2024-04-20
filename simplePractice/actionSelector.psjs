@@ -1,0 +1,249 @@
+/**
+ * this is a Photoshop UXP Script for practice.
+ * this Script demonstrates how to pick Photoshop actions and desplay on UI.
+ * 
+ */
+
+
+const { app } = require("photoshop");
+
+/**
+ * modal window class
+ */
+class ModalWindow {
+    constructor (dialog, header, main, footer) {
+        this._dialog = dialog;
+        this._dialog.width = "300px";
+        this._dialog.height = "500px";
+        this.header = header;
+        this.main = main;
+        this.footer = footer;
+    }
+    
+    uniteElms () {
+        this._dialog.appendChild(this.header);
+        this._dialog.appendChild(this.main);
+        this._dialog.appendChild(this.footer);
+    }
+
+    get dialog () {
+      return this._dialog;
+    }
+}
+
+class DivArea {
+  constructor (
+    id,
+    width = "auto",
+    height = "auto",
+    margin = "auto"
+  ) {
+    this._elm = document.createElement("div");
+    this.id = id;
+    this._elm.id = id;
+    this._elm.style.height = height,
+    this._elm.style.width = width;
+    this._elm.style.margin = margin;
+    this._elm.style.border = "1px solid #fff";
+  }
+
+  get elm () {
+    return this._elm;
+  }
+};
+ 
+/**
+ * create each area of div element
+ * this is basic layout element
+ * 
+ * div要素を作成。
+ * これがレイアウトの基礎の要素となる。 
+ */
+const dropArea = new DivArea("drop_area","100%","70px");
+const actionArea = new DivArea("action_area","100%","70px");
+const buttonArea = new DivArea("button_area","100%","50px");
+
+/**
+ * selector which has action list and it connects with
+ * action set selector
+ * 
+ * アクションセレクター
+ * アクションセットのセレクターと連動
+ */
+
+class SelectorChild {
+  constructor (
+    id,
+    name,
+    parent
+    ) {
+    this.parent = parent;
+    this.id = id;
+    this.name = name;
+
+    this._wrapper = document.createElement('select');
+    this._wrapper.name = this.name;
+    this._wrapper.value = this.name;
+    this._wrapper.id = this.id;
+    this.parent.appendChild(this._wrapper);
+  }
+
+  /**
+   * read action list from action set you selected
+   * 選択されたアクションセットからアクションリストを読み込む
+   * @param {Photoshop Actions} actions
+   */
+  setActions (actions) {
+    while (this._wrapper.firstChild) {
+      this._wrapper.removeChild(this._wrapper.firstChild);
+    }
+    actions.forEach(action => {
+      const actionList = document.createElement("option");
+      actionList.value = action.name;
+      actionList.textContent = action.name;
+      this._wrapper.appendChild(actionList);
+    })
+  }
+
+  get wrapper () {
+    return this._wrapper;
+  }
+}
+
+/**
+ * selector element for action set
+ * アクションセットのためのセレクター
+ */
+class Selector {
+  constructor (
+    id,
+    name,
+    parent,
+    childSelector
+  ) {
+    this.id = id;
+    this.name = name;
+    this.parent = parent;
+    this.actionSets = app.actionTree;
+    this.childSelector = childSelector;
+    this._wrapper = document.createElement('select');
+
+
+    this._wrapper.name = this.name;
+    this._wrapper.value = this.name;
+    this._wrapper.id = this.id;
+    this.parent.appendChild(this._wrapper);
+    this.actionSets.forEach(action => {
+      const actionList = document.createElement("option");
+      actionList.value = action.name;
+      actionList.textContent = action.name;
+      this._wrapper.appendChild(actionList);
+    });
+
+    this._wrapper.addEventListener("change", (e) => {
+      console.log(e.target.name);
+      const set = this.actionSets.find(acs => acs.name === e.target.value);
+      this.childSelector.setActions(set.actions);
+    });
+  };
+
+  get wrapper () {
+    return this._wrapper;
+  }
+};
+
+class CloseButton {
+  constructor (
+    name,
+    id,
+    parent
+  ) {
+    this.name = name;
+    this.id = id;
+    this.parent = parent;
+
+    this._itself = document.createElement("button");
+    this._itself.name = this.name;
+    this._itself.id = this.id;
+    this._itself.textContent = this.name;
+
+    this.parent.appendChild(this._itself);
+  }
+
+  setEvent (setId, actionid, modal) {
+    return new Promise (resolve => {
+        this._itself.addEventListener("click", async() => {
+          await app.showAlert(`
+          set ${document.getElementById(setId).value ?? "nothing"} and
+          action ${document.getElementById(actionid).value ?? "nothing"} was called!
+          `);
+          modal.dialog.close();
+          resolve();
+        });
+    });
+  }
+
+  get itself () {
+    return this._itself;
+  } 
+};
+
+/**
+ * create instances
+ */
+
+const actionfield = new SelectorChild(
+  "action",
+  "action",
+  actionArea.elm
+);
+
+const actionsetfield = new Selector(
+  "actionset",
+  "actionset",
+  dropArea.elm,
+  actionfield
+);
+
+const button = new CloseButton(
+  "close",
+  "closebtn",
+  buttonArea.elm
+);
+
+
+/**
+ * create modal window
+ * @returns {ModalWindow}
+ */
+const createDialog = async () => {
+    const modalWindow = new ModalWindow(
+        document.createElement("dialog"),
+        dropArea.elm,
+        actionArea.elm,
+        buttonArea.elm
+    );
+    modalWindow.dialog.style.color = "white";
+    modalWindow.uniteElms();
+    return modalWindow;
+};
+
+/**
+ * show modal window and UI
+ * after close the window, it returns Promise
+ * @returns {string}
+ */
+
+const showModalWindow = async () => {
+    const modal = await createDialog();
+    document.body.appendChild(modal.dialog).showModal();
+    await button.setEvent(actionsetfield.id, actionfield.id, modal);
+    return "finished";
+}
+
+try {
+    const n = await showModalWindow();
+    await app.showAlert(n);
+} catch (e) {
+    await app.showAlert(e);
+}

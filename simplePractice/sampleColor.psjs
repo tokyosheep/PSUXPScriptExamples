@@ -1,0 +1,15 @@
+const { app } = require("photoshop");
+
+if (app.documents.length < 1) {
+    await app.showAlert("nothing any open document here");
+    return;
+}
+
+if (app.activeDocument.width < 10 || app.activeDocument.height < 10) {
+    await app.showAlert("create or open more bigger document");
+}
+
+const col = await app.activeDocument.sampleColor({x: 10, y: 10});
+console.log(col);
+
+await app.showAlert("get sample");

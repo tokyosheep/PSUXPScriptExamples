@@ -1,0 +1,18 @@
+const { app } = require("photoshop");
+
+try {
+  const width = app.activeDocument.width;
+  const height = app.activeDocument.height;
+  
+  /*
+    expand canvas size
+  */
+  await app.activeDocument.resizeCanvas(width + 200, height + 200);
+  app.showAlert("expanded canvas size");
+  /*
+    resize image
+  */
+  await app.activeDocument.resizeImage(500, 500);
+} catch (e) {
+    await app.showAlert(e);
+}

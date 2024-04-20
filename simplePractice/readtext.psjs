@@ -1,0 +1,12 @@
+const { app } = require("photoshop");
+
+const uxpfs = require("uxp").storage.localFileSystem;
+
+try {
+    const file = await uxpfs.getFileForOpening({allowMultiple: false, types: ['txt','json']});
+    const data = await file.read();
+    console.log(data);
+    await app.showAlert("read the document");
+} catch (e) {
+    await app.showAlert(e);
+}

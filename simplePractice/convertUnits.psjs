@@ -1,0 +1,14 @@
+/**
+ * this is simple script for practive.
+ * domonstraing how to use convertUnits method.
+ * this method can convert unit like from px to mm.
+ */
+
+const { app, constants } = require("photoshop");
+const widthNum = 300;
+// initial number
+await app.showAlert(widthNum);
+const mmwidth = app.convertUnits(widthNum, constants.Units.PIXELS, constants.Units.MM, 300);
+// converted it into mm
+await app.showAlert(mmwidth);
+await app.showAlert("converted");

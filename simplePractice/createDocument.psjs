@@ -1,0 +1,41 @@
+/**
+ * this is simple Photoshop UXP Script.
+ * just creating new documents simultaneously.
+ */
+
+const { app } = require("photoshop");
+
+class PhotoshopDocument {
+    constructor (
+      name,
+      width = 500,
+      height = 500,
+      resolution = 72,
+      mode = "RGBColorMode",
+      fill = "transparent"
+    ) {
+        this.name = name;
+        this.width = width;
+        this.height = height;
+        this.resolution = resolution;
+        this.mode = mode;
+        this.fill = fill;
+    }
+
+    async generateDoc (numberleter = "") {
+        return await app.documents.add({
+            name: numberleter + this.name,
+            width: this.width,
+            height: this.height,
+            resolution: this.resolution,
+            mode: this.mode,
+            fill: this.fill
+        });
+    };
+};
+
+const docPattern = new PhotoshopDocument("canvas");
+
+for (let i = 0; i < 5; i++) {
+    await docPattern.generateDoc(i);
+};

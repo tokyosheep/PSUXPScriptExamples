@@ -1,0 +1,17 @@
+/*
+ * before executing script, you must draw a path item
+ */
+
+const { app } = require("photoshop");
+console.log([...app.activeDocument.pathItems]);
+/*
+you can search into subPathItems
+*/
+console.log([...app.activeDocument.pathItems[0].subPathItems]);
+
+const results = await Promise.allSettled(app.activeDocument.pathItems.map( async (pathitem) => {
+    return await pathitem.strokePath();
+}));
+
+console.log(results);
+await app.showAlert("drew");

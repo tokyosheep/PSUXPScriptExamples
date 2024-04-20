@@ -1,0 +1,33 @@
+/**
+ * this is a simple script for practice.
+ * just counting layers and alerting number of layer.
+ */
+
+const { app } = require("photoshop");
+
+const layers = app.activeDocument.layers;
+
+/*
+collect layer names
+レイヤーの名前を集める
+*/
+const names = [];
+
+/**
+ * get layer's name recursively
+ * 再帰的にレイヤーの名前を取得
+ * @param layers 
+ */
+const collectNames = async layers => {
+  await Promise.all(layers.map(async (layer) => {
+    names.push(layer.name);
+    if(layer.kind === 'group') {
+        await collectNames(layer.layers);
+    }
+  }));
+};
+
+await collectNames(layers);
+console.log(names);
+
+await app.showAlert(`you have ${names.length} layers`);

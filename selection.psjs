@@ -1,0 +1,55 @@
+/**
+ * this script shows how to generate selection through batchPlay.
+ * batchPlay can access allmost all of functons on Photoshop without API.
+ */
+const { app } = require("photoshop");
+console.log(app.activeDocument);
+const batchPlay = require("photoshop").action.batchPlay;
+
+/*
+on pixel
+*/
+const makeSelection = async () => {
+    const result = await batchPlay(
+        [
+           {
+              _obj: "addTo",
+              _target: [
+                 {
+                    _ref: "channel",
+                    _property: "selection"
+                 }
+              ],
+              to: {
+                 _obj: "rectangle",
+                 top: {
+                    _unit: "pixelsUnit",
+                    _value: 30
+                 },
+                 left: {
+                    _unit: "pixelsUnit",
+                    _value: 30
+                 },
+                 bottom: {
+                    _unit: "pixelsUnit",
+                    _value: app.activeDocument.height - 30
+                 },
+                 right: {
+                    _unit: "pixelsUnit",
+                    _value: app.activeDocument.width - 30
+                 }
+              },
+              _options: {
+                 dialogOptions: "dontDisplay"
+              }
+           }
+        ],{
+        });
+}
+
+try {
+    await makeSelection();
+ } catch (e) {
+    console.log(e);
+    app.showAlert(e);
+ }

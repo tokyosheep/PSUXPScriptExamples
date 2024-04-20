@@ -1,0 +1,38 @@
+/**
+ * this is an exmple of script how to draw on guide.
+ */
+
+const  { app, constants } = require("photoshop");
+
+if ( app.documents.length < 1 ) {
+    await app.showAlert("there isn't any document on Photoshop ");
+    return;
+}
+
+class GuidePattern {
+    constructor (
+        horizontal,
+        vertical
+    ) {
+        this.horizontal = horizontal;
+        this.vertical = vertical;
+    }
+
+    drawHorizontalSide () {
+        app.activeDocument.guides.add(constants.Direction.HORIZONTAL, this.horizontal);
+        app.activeDocument.guides.add(constants.Direction.HORIZONTAL, app.activeDocument.width - this.horizontal);
+    }
+
+    drawVerticalSide () {
+        app.activeDocument.guides.add(constants.Direction.VERTICAL, this.vertical)
+        app.activeDocument.guides.add(constants.Direction.VERTICAL, app.activeDocument.height - this.vertical);
+    }
+};
+
+const g = new GuidePattern(20, 20);
+try {
+    g.drawHorizontalSide();
+    g.drawVerticalSide();
+} catch (e) {
+    await app.showAlert(e);
+}

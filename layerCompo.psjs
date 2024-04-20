@@ -1,0 +1,18 @@
+/**
+ * this is example of how to create layer comp
+ * 
+ * Version Requirements
+ * Photoshop later than 24.0
+ */
+
+const { app } = require("photoshop");
+const comp1 = await app.activeDocument.layerComps.add();
+console.log(comp1);
+comp1.comment = "this is an example of layer comp";
+comp1.name = "example1";
+
+const comp2 = await app.activeDocument.layerComps.add();
+comp2.comment = 'this is another layer compo';
+comp2.name = "exmaple2";
+await comp1.apply();
+await app.showAlert("finished");

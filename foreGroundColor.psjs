@@ -1,0 +1,20 @@
+/**
+ * this is an exmplae of simple Photoshop UXP Script.
+ * just showing how to set foreground color through UXP Script.
+ */
+const { app } = require("photoshop");
+try {
+    /**
+     * create instance from Solid Color construct
+     */
+    const red = new app.SolidColor();
+    red.rgb.red = 255;
+    red.rgb.green = 0;
+    red.rgb.blue = 0;
+    
+    app.foregroundColor = red;
+
+    await app.showAlert("set color");
+} catch (e) {
+    await app.showAlert(e);
+}

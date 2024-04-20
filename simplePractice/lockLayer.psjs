@@ -1,0 +1,21 @@
+/**
+ * this is an exmple of Photoshop UXP Script.
+ * just locking layer you selected.
+ */
+const { app } = require("photoshop");
+
+if (app.documents.length < 1 || app.activeDocument.activeLayers.length < 1) {
+    return;
+}
+
+const layer = app.activeDocument.activeLayers[0];
+
+// layer.allLocked = true;
+layer.pixelsLocked = true;
+layer.positionLocked = true;
+layer.transparentPixelsLocked = true;
+/*
+any property locked, it always returns true 
+何かプロパティがロックされていたらいつでもtrueを返す
+*/
+await app.showAlert(layer.locked);

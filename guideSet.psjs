@@ -1,0 +1,409 @@
+/**
+ * this is UXP Photoshop Script
+ * please save as a psjs file this one
+ * and load on Photoshop.
+ * 
+ * requirement
+ * Photoshop later than 23.5
+ */
+
+const { app } = require("photoshop");
+
+/**
+ * turn string value from input into number value
+ * if you hope use mm unit, it turns px into mm unit as well
+ * @param num @type {number}
+ * @param unitPoint @type {'mm'|'px'}
+ * @returns @type {number}
+ */
+const setUnitValue = (num, unitPoint) => {
+    if(num === 0 || isNaN(num)) {
+        return null;
+    }
+    return unitPoint.value === 'mm' ?
+    app.convertUnits(parseFloat(num), constants.Units.MM, constants.Units.PIXELS, app.activeDocument.resolution)
+    :
+    parseFloat(num);
+}
+
+/**
+ * drawing guide on document
+ * through the value you filled in the inputs 
+ * @param left @type {string}
+ * @param right @type {string}
+ * @param top @type {string}
+ * @param bottom @type {string}
+ * @returns void
+ */
+const drawingGuides = (left, right, top, bottom) => {
+    const unitPoint = [...document.querySelectorAll('.unit')].find(elm => elm.checked);
+    if (unitPoint === undefined) {
+        app.showAlert('please check the unit box');
+        return;
+    }
+    left = setUnitValue(left, unitPoint);
+    right = setUnitValue(right, unitPoint);
+    top = setUnitValue(top, unitPoint);
+    bottom = setUnitValue(bottom, unitPoint);
+    //if value is empty, it'll pass
+    if (top !== null) app.activeDocument.guides.add(constants.Direction.HORIZONTAL, top);
+    if (bottom !== null) app.activeDocument.guides.add(constants.Direction.HORIZONTAL,  app.activeDocument.height - bottom);
+    if (left !== null) app.activeDocument.guides.add(constants.Direction.VERTICAL, left);
+    if (right !== null) app.activeDocument.guides.add(constants.Direction.VERTICAL, app.activeDocument.width - right);
+};
+
+/**
+ * drawing guide on center of document 
+ */
+const drawGuideCenter = () => {
+    app.activeDocument.guides.add(constants.Direction.HORIZONTAL, app.activeDocument.height/2);
+    app.activeDocument.guides.add(constants.Direction.VERTICAL, app.activeDocument.width/2);
+}
+
+/**
+ * modal window class
+ */
+
+//dialog size
+const DIALOG_WIDTH = '300px';
+const DIALOG_HEIGHT = '500px';
+
+/**
+ * class Object based on HTML DOM
+ */
+class BaseDOM {
+    constructor (elm, className, id) {
+        this._elm = elm;
+        this._elm.class = className;
+        if (id !== null && id !== undefined)this._elm.id = id;
+    }
+
+    /**
+     * set css style Object
+     * style property isn't property. this is setter method.
+     * so you can't set object like this
+     * elm.styles = {width: 300px,height: 200px}
+     * @param styleObj @type {Object}
+     */
+    setStyles (styleObj) {
+        Object.entries(styleObj).forEach(([key, value]) => {
+            this._elm.style[key] = value;
+        })
+    }
+
+    get element () {
+        return this._elm;
+    }
+
+    /**
+     * add HTMLElement as a child
+     * @param elms @type {HTMLElement}
+     */
+    addElement (...elms) {
+        for (let i=0;i<elms.length;i++) {
+            this._elm.appendChild(elms[i]);
+        }
+    }
+}
+
+/**
+ * modal window class object
+ */
+class ModalWindow {
+    constructor (dialog, header, main, footer) {
+        this._dialog = dialog;
+        this._dialog.width = DIALOG_WIDTH;
+        this._dialog.height = DIALOG_HEIGHT;
+        this.header = header;
+        this.main = main;
+        this.footer = footer;
+    }
+    
+    /**
+     * unit elements under dialog window
+     */
+    uniteElms () {
+        this._dialog.appendChild(this.header);
+        this._dialog.appendChild(this.main);
+        this._dialog.appendChild(this.footer);
+    }
+
+    get dialog () {
+      return this._dialog;
+    }
+};
+
+const MainAreaStyle = {
+    width: '100%',
+    height: '200px',
+    display: 'flex',
+    justifyContent: 'flex-start',
+    flexWrap:'wrap',
+    backgroundColor: '#111'
+};
+
+/**
+ * main area of UI Dialog
+ */
+class MainArea extends BaseDOM {
+    constructor () {
+        super(document.createElement('main'), 'main', 'dialog_mainArea');
+        this.setStyles(MainAreaStyle);
+    }
+};
+
+const MainDividedAreaStyle = {
+    width: '50%',
+    height: '50%',
+    padding: '5px',
+    display: 'flex',
+    justifyContent: 'space-around',
+    border: 'solid 1px #fff',
+    boxSizing: 'border'
+};
+
+/**
+ * Mainarea is devided into four parts of area
+ */
+class MainPartArea extends BaseDOM {
+    constructor (className, id = null) {
+        super(document.createElement('div'), className, id);
+        this.setStyles(MainDividedAreaStyle);
+    }
+
+    get element () {
+        return this._elm;
+    }
+    
+};
+
+/**
+ * number input form
+ */
+class NumberBox extends BaseDOM {
+    constructor (className, id = null) {
+        super(document.createElement('sp-textfield'), className, id);
+        this._elm.type = 'number';
+        this._elm.value = 0;
+    }
+};
+
+const NameTextStyle = {
+    color: '#fff',
+    fontSize: '12px'
+};
+
+/**
+ * title of number text
+ */
+class NameText extends BaseDOM {
+    constructor (text, className, id = null) {
+        super(document.createElement('span', className, id));
+        this.setStyles(NameTextStyle);
+        this._elm.textContent = text;
+    }
+};
+
+const titleStyle = {
+    color: '#fff',
+    fontSize: '20px',
+};
+
+/**
+ * head h1
+ */
+class TitleHead extends BaseDOM {
+    constructor () {
+        super(document.createElement('h1'), 'head', 'title');
+        this.setStyles(titleStyle);
+        this._elm.textContent = 'guide';
+    }
+};
+
+const headerStyle = {
+    width: '100%',
+    height: '40px'
+}
+
+/**
+ * header area
+ */
+class HeaderArea extends BaseDOM {
+    constructor () {
+        super(document.createElement('header'), 'header', 'dialog_header');
+        this.setStyles(headerStyle);
+    }
+};
+
+/**
+ * radio box
+ */
+class SPRadio extends BaseDOM {
+    constructor (name, id) {
+        super(document.createElement('sp-radio'), 'sp-radio', id);
+        this._elm.className = name;
+        this._elm.textContent = id;
+        this._elm.value = id;
+        this._elm.style.marginLeft = '10px';
+    }
+
+    setChecked () {
+        this._elm.checked = true;
+    }
+};
+
+const SPRadioAreaStyle = {
+    width: '100%',
+    height: '30px',
+    display: 'flex',
+    justifyContent: 'flex-start',
+    gap: '10px',
+    alignItems: 'center'
+}
+
+/**
+ * wrapper for radio boxes
+ */
+class SPRadioArea extends BaseDOM {
+    constructor (id) {
+        super(document.createElement('sp-radio-group'), 'footer_radioArea', id);
+        this._elm.name = 'unit';
+        this.setStyles(SPRadioAreaStyle);
+    }
+}
+
+const footerStyle = {
+    width: '100%',
+    height: '90px',
+    display: 'block'
+}
+
+class FooterArea extends BaseDOM {
+    constructor () {
+        super(document.createElement('footer'), 'footer', 'dialog_footer');
+        this.setStyles(footerStyle);
+    }
+}
+
+class StdButton extends BaseDOM {
+    constructor (text, id) {
+        super(document.createElement('sp-action-button'), 'sp-action-button', id);
+        this._elm.textContent = text;
+        this._elm.style.marginRight = '10px';
+    }
+}
+
+/**
+ * create main part area
+ * @param mainArae @type {HTMLElement}
+ */
+const addNumberBox = (mainArae) => {
+    const leftNumBox = new NumberBox('numberbox', 'leftbox');
+    const rightNumBox = new NumberBox('numberbox', 'rightbox');
+    const topNumBox = new NumberBox('numberbox', 'topbox');
+    const bottomBox = new NumberBox('numberbox', 'bottombox');
+    const mainpart1 = new MainPartArea('main_part', 'main_1');
+    const mainpart2 = new MainPartArea('main_part', 'main_2');
+    const mainpart3 = new MainPartArea('main_part', 'main_3');
+    const mainpart4 = new MainPartArea('main_part', 'main_4');
+    mainpart1.addElement(new NameText('left', 'numberText').element, leftNumBox.element);
+    
+    mainpart2.addElement(new NameText('right', 'numberText').element, rightNumBox.element);
+
+    mainpart3.addElement(new NameText('top', 'numberText').element, topNumBox.element);
+
+    mainpart4.addElement(new NameText('bottom', 'numberText').element, bottomBox.element);
+
+    mainArae.addElement(
+        mainpart1.element,
+        mainpart2.element,
+        mainpart3.element,
+        mainpart4.element
+    );
+}
+
+/**
+ * create dialog window and set HTMLElements
+ * @returns @type {ModalWindow}
+ */
+const createDialog = async () => {
+    const header = new HeaderArea();
+    const title = new TitleHead();
+    const footer = new FooterArea();
+
+    const radioArea = new SPRadioArea('radioArea');
+    const spRadiomm = new SPRadio('unit', 'mm');
+    const spRadiopx = new SPRadio('unit', 'px'); 
+
+    radioArea.addElement(spRadiomm.element);
+    radioArea.addElement(spRadiopx.element);
+
+    const centerBtn = new StdButton('center', 'center');
+    centerBtn.setStyles('width', '100px');
+    footer.addElement(
+        radioArea.element,
+        new StdButton('draw', 'draw').element,
+        new StdButton('cancel', 'cancel').element,
+        centerBtn.element
+    );
+    header.addElement(title.element);
+    const mainArae = new MainArea();
+    
+    addNumberBox(mainArae);
+    const modalWindow = new ModalWindow(
+        document.createElement("dialog"),
+        header.element,
+        mainArae.element,
+        footer.element
+    );
+    modalWindow.uniteElms();
+    
+    return modalWindow;
+};
+
+/**
+ * show modal Dialog
+ * this is await function.
+ * as you can see, the function never return any value
+ * untill you click the cancel button.
+ * 
+ * and Promise awaits you click the cancel button.
+ * once you click it, it return Promise
+ * and finish it.
+ * @returns @type {Promise<void>}
+ */
+const showModalWindow = async() => {
+    const modal = await createDialog();
+    document.body.appendChild(modal.dialog).showModal();
+    return new Promise((resolve, reject) => {
+        const doneBtn = document.getElementById("draw");
+        doneBtn.addEventListener("click", () => {
+            drawingGuides(
+                document.getElementById('leftbox').value,
+                document.getElementById('rightbox').value,
+                document.getElementById('topbox').value,
+                document.getElementById('bottombox').value
+            );
+        });
+
+        document.getElementById('center').addEventListener('click', () => {
+            drawGuideCenter();
+        });
+
+        const cancelBtn = document.getElementById("cancel");
+        cancelBtn.addEventListener("click", () => {
+            modal.dialog.close();
+            resolve("dialog cancelled");
+        });
+        
+        modal.dialog.addEventListener("close", () => {
+            reject("dialog closed");
+        });
+    })
+}
+
+try {
+    await showModalWindow();
+} catch (e) {
+    await app.showAlert(e);
+}

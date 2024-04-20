@@ -1,0 +1,101 @@
+/**
+ * this script demonstrates how to display dialog on Photoshop.
+ * UXP doesn't support Script UI like Extenscript.
+ * now you have to use HTML, CSS to construct dialog on UXP.
+ */
+
+const { app } = require("photoshop");
+
+/**
+ * Main Window class;
+ */
+class ModalWindow {
+    constructor (dialog, header, main) {
+        this.dialog = dialog;
+        this.header = header;
+        this.header.style.width = '100%';
+        this.header.style.height = '50px';
+        this.main = main;
+        this.main.style.width = '100%';
+        this.main.style.height = '100px';
+    }
+
+    appendOnHeader (elm) {
+        this.header.appendChild(elm);
+    }
+
+    appendOnMain (elm) {
+        this.main.appendChild(elm);
+    }
+
+    uniteElms () {
+        this.dialog.appendChild(this.header);
+        this.dialog.appendChild(this.main);
+    }
+}
+
+class Title {
+    constructor (elm, title) {
+        this.elm = elm;
+        this.elm.textContent = title; 
+        this.elm.style.color = "white";
+    }
+}
+
+class Button {
+    constructor (id, text) {
+        this.elm = document.createElement("button");
+        this.elm.id = id;
+        this.elm.textContent = text;
+    }
+}
+
+const createDialog = async () => {
+    const modalWindow = new ModalWindow(
+        document.createElement("dialog"),
+        document.createElement("header"),
+        document.createElement("main")
+    );
+
+    modalWindow.dialog.style.color = "white";
+    const title = new Title(document.createElement("h1"), "example");
+    modalWindow.appendOnHeader(title.elm);
+    modalWindow.appendOnMain(
+        new Button("done", "done").elm
+    );
+    modalWindow.appendOnMain(new Button("cancel", "cancel").elm);
+    modalWindow.uniteElms();
+    return modalWindow;
+};
+
+const showModalWindow = async() => {
+    const modal = await createDialog();
+    document.body.appendChild(modal.dialog).showModal();
+    return new Promise((resolve, reject) => {
+        const doneBtn = document.getElementById("done");
+        doneBtn.addEventListener("click", () => {
+            console.log("user is done");
+            modal.dialog.close();
+            resolve("user is done");
+        });
+
+        const cancelBtn = document.getElementById("cancel");
+        cancelBtn.addEventListener("click", () => {
+            console.log("dialog cancelled");
+            modal.dialog.close();
+            reject("dialog cancelled");
+        });
+        
+        modal.dialog.addEventListener("close", () => {
+            onsole.log("dialog closed");
+            reject("dialog closed");
+        })
+    })
+}
+
+try {
+    const n = await showModalWindow();
+    await app.showAlert(n);
+} catch (e) {
+    await app.showAlert(e);
+}

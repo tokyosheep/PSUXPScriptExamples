@@ -1,0 +1,9 @@
+const { app, constants } = require("photoshop");
+
+const BLUE = constants.LabelColors.BLUE;
+const names = ["house", "techno", "DrumnBass", "progressive"];
+
+const layers = await Promise.all(names.map(async name => app.activeDocument.createLayer({ name })));
+console.log(layers);
+await app.activeDocument.createLayerGroup({name: "musics", fromLayers: layers });
+await app.showAlert("created");

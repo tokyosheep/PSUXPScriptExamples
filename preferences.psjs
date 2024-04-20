@@ -1,0 +1,18 @@
+/**
+ * on Photoshop UXP, you could access preferences through preferences property.
+ */
+
+const { app } = require("photoshop");
+
+const { preferences } = app;
+console.log(preferences);
+/*
+units
+*/
+console.log(preferences.unitsAndRulers);
+
+/*
+refer to cursors
+*/
+console.log(preferences.cursors);
+await app.showAlert("hello");

@@ -1,0 +1,15 @@
+const { app } = require("photoshop");
+
+/*
+move an active layer
+*/
+try {
+  const layer = app.activeDocument.activeLayers[0]
+  await layer.translate(200,0);
+  /*
+    interpolation optional parameter
+  */
+  await layer.skew(-30, 0, /* { interpolation: constants.InterpolationMethod.BICUBICSMOOTHER } */);
+} catch (e) {
+    app.showAlert(e);
+}
