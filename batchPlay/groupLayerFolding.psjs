@@ -1,0 +1,115 @@
+
+/*
+ I refered to the code in this link 
+ https://forums.creativeclouddeveloper.com/t/how-to-expand-a-group/2565/7
+
+ This script demonstrates how to fold or unfold group layers.
+*/
+const photoshop = require("photoshop"); 
+const { app } = require("photoshop");
+const batchPlay = photoshop.action.batchPlay;
+
+/**
+ * check the layers whether expanded or not.
+ * @param {Layer} layer
+ * @returns {boolean}
+ */
+async function isExpandedLayer(layer) {
+	//if the layer isn't group, returning false
+	if (layer.kind !== "group") return false;
+	const result = await batchPlay(
+	   [
+		  {
+			 _obj: "get",
+			 _target: [
+				{
+				   _property: "layerSectionExpanded"
+				},
+				{
+				   _ref: "layer",
+				   _id: layer.id
+				},
+				{
+				   _ref: "document",
+				   _id: app.activeDocument.id
+				}
+			 ],
+			 _options: {
+				dialogOptions: "dontDisplay"
+			 }
+		  }
+	   ],
+	   {}
+	);
+	const pinned = result[0];
+   	return pinned.layerSectionExpanded;
+}
+
+/**
+ * folding a group layer
+ * @param {boolean} expand 
+ * @param {boolean} recursive 
+ */
+async function foldingFolder (expand = false, recursive = false) {
+        await batchPlay(
+            [
+                {
+                    _obj: "set",
+                    _target: {
+                        _ref: [
+                            {_property: "layerSectionExpanded"},
+                            {
+                                _ref: "layer",
+                                _enum: "ordinal",
+                                _value: "targetEnum",
+                            }
+                        ],
+                    },
+                    to: expand,
+                    recursive,
+                    _options: {dialogOptions: "dontDisplay"},
+                },
+            ],
+            {}
+        );
+}
+
+/**
+ * activate a target layer
+ * @param layer 
+ */
+async function selectLayer (layer) {
+	const result = await batchPlay(
+		[
+		   {
+			  _obj: "select",
+			  _target: [
+				 {
+					_ref: "layer",
+					_name: layer.name
+				 }
+			  ],
+			  makeVisible: false,
+			  layerID: [
+				 layer.id
+			  ],
+			  _options: {
+				 dialogOptions: "dontDisplay"
+			  }
+		   }
+		],
+		{}
+	 );
+}
+try {
+	for (let i = 0;i < app.activeDocument.layers.length;i++) {
+		const targetLayer = app.activeDocument.layers[i];
+		const expanded = await isExpandedLayer(targetLayer);
+		if (expanded) {
+			await selectLayer(targetLayer);
+			await foldingFolder();
+		}
+	}
+} catch (e) {
+	await app.showAlerrt(e);
+}

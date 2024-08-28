@@ -1,0 +1,32 @@
+const photoshop = require("photoshop"); 
+const batchPlay = photoshop.action.batchPlay;
+
+/**
+ * adjust the view on a Photoshop document.
+ * The x and y parameters represent the position on  the x and y 
+ * axes.
+ * zoom controles the document's zoom level.
+ * @param {number} x: position x 
+ * @param {number} y: position y 
+ * @param {number} zoom: zoom level
+ */
+const setViewRange = async (x, y, zoom) => {
+	try {
+	   const result = await batchPlay(
+		 [{
+		   _obj:"setPanZoom",
+		   x,
+		   y,
+		   z:zoom,
+		   resize: false,
+		   animate: true,
+		 }],
+		  {synchronousExecution: true}
+	   );
+	   console.log(result);
+	 } catch (e) {
+	   console.log(e);
+	 }
+}
+
+setViewRange(0, 20, 0.5);
