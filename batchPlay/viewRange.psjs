@@ -2,6 +2,8 @@ const photoshop = require("photoshop");
 const batchPlay = photoshop.action.batchPlay;
 
 /**
+ * I refered to the code in this lionk
+ * https://forums.creativeclouddeveloper.com/t/is-posible-to-set-a-zoom-event/5268/8?u=shuji
  * adjust the view on a Photoshop document.
  * The x and y parameters represent the position on  the x and y 
  * axes.

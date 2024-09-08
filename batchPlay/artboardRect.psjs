@@ -1,0 +1,58 @@
+/*
+Reference
+https://forums.creativeclouddeveloper.com/t/artboards-bounds-in-api-2-0/5023/4
+
+This script demonstrates how to get artboard rect.
+Select an artboard layer, before running script.
+*/
+
+const { app } = require("photoshop");
+const { batchPlay } = require("photoshop").action;
+
+/**
+ * get artboard rect through batch play.
+ */
+const getArtboardRect = async() => {
+	const result = await batchPlay(
+		[
+		   {
+			  _obj: "get",
+			  _target: [
+				 {
+					_property: "artboard"
+				 },
+				 {
+					_ref: "layer",
+					_id: app.activeDocument.activeLayers[0].id //change this ID
+				 },
+				 {
+					_ref: "document",
+					_id: app.activeDocument.id //change this ID
+				 }
+			  ],
+			  _options: {
+				 dialogOptions: "dontDisplay"
+			  }
+		   }
+		],
+		{
+		}
+	 );
+	 
+	 if (!Object.hasOwn(result[0], "artboard")) return null;
+	 const rect = result[0].artboard.artboardRect;
+	 return rect;
+}
+
+if (app.activeDocument.activeLayers.length === 0) {
+	await app.showAlert("select an artboard layer.");
+	return;
+}
+const rect = await getArtboardRect();
+if (rect === null) {
+	await app.showAlert("the layer isn't artboard layer.");
+}
+const message = Object.entries(rect).reduce((acc ,[key, value]) => {
+	return `${acc}\n${key}  :${value}`;
+}, "");
+await app.showAlert(message);
