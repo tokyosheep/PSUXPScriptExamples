@@ -1,9 +1,10 @@
-# This is examples of Photoshop UXP Script.
+# Examples of Photoshop UXP scripts.
 
-Adobe publishes offical UXP document [here](https://developer.adobe.com/photoshop/uxp/2022/).   
-However, I believe some may benefit from additional practice examples, especially beginners who might find the material confusing.
+For those who are new to UXP scripting or just starting out with development, these examples provide specific code for simple purposes.
 
-I hope this helps point them in the right direction.
+I hope you find these examples useful for your development.
+
+You can find the official UXP documentation UXP document [here](https://developer.adobe.com/photoshop/uxp/2022/).   
 
 ## donation
 
