@@ -1,6 +1,6 @@
 /**
  * This script demonstrates how to get a command in action.
- * Action contains commands as you recorded from the steps your performed in Photoshop, and you may
+ * An action contains commands as you recorded from the steps your performed in Photoshop, and you may
  * think you want to get commands in your script.
  */
 
