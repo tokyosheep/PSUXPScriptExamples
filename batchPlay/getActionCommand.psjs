@@ -1,0 +1,73 @@
+/**
+ * This script demonstrates how to get a command in action.
+ * Action contains commands as you recorded from the steps your performed in Photoshop, and you may
+ * think you want to get commands in your script.
+ */
+
+const { batchPlay } = require("photoshop").action;
+const { app } = require("photoshop");
+
+/**
+ * Get an action command through action set id, action id and command index.
+ * The object batchPlay returns contains below the properties.
+ * ID: @type {number}
+ * count: @type {number}
+ * itemIndex: @type {number}
+ * name: @type {string}
+ * numberOfChildren: @type {number}
+ * parentIndex: @type {number}
+ * parentName: @type {string}
+ */
+async function getActionCommand(
+   actionSetId,
+   actionId,
+	commandIndex
+) {
+   const result = await batchPlay(
+      [
+         {
+            _obj: "get",
+            _target: [
+               {
+                  _ref: "command",
+                  _index: commandIndex
+               },
+               {
+                  _ref: "action",
+                  _id: actionId
+               },
+               {
+                  _ref: "actionSet",
+                  _id: actionSetId
+               }
+            ],
+            _options: {
+               dialogOptions: "dontDisplay"
+            }
+         }
+      ],
+      {}
+   );
+   return result[0];
+}
+
+const getActionCommands = async () => {
+   try {
+      // get action id and action set id
+      const actionSetId = app.actionTree[0].id;
+      const actionId = app.actionTree[0].actions[0].id;
+      // execute batchPlay
+      const result = await getActionCommand(
+         actionSetId,
+         actionId,
+         1
+      );
+      console.log(result);
+      await app.showAlert(result.name);
+   } catch (e) {
+      await app.showAlert(e);
+   }
+}
+
+await getActionCommands();
+

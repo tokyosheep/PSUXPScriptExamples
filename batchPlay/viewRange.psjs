@@ -14,6 +14,8 @@ const batchPlay = photoshop.action.batchPlay;
  */
 const setViewRange = async (x, y, zoom) => {
 	try {
+	   // x = x * 2.4;
+	   // y = y * 2.5;
 	   const result = await batchPlay(
 		 [{
 		   _obj:"setPanZoom",
@@ -21,7 +23,7 @@ const setViewRange = async (x, y, zoom) => {
 		   y,
 		   z:zoom,
 		   resize: false,
-		   animate: true,
+		   animate: false,
 		 }],
 		  {synchronousExecution: true}
 	   );
@@ -31,4 +33,4 @@ const setViewRange = async (x, y, zoom) => {
 	 }
 }
 
-setViewRange(0, 20, 0.5);
+setViewRange(5000, 1000, 2);
