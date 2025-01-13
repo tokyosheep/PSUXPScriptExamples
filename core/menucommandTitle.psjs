@@ -27,8 +27,9 @@ const startRecordTitle = core.translateUIString("$$$/Menu/Actions/RecordAction")
 const stopRecordingTitle = core.translateUIString("$$$/ActionsPalette/StopRecording");
 
 const currentTitle = await core.getMenuCommandTitle({ commandID: ACTION_RECORD_TITLE });
-
-if (currentTitle === stopRecordingTitle) {
+console.log(startRecordTitle);
+console.log(currentTitle);
+if (currentTitle[0] === startRecordTitle) {
 	await app.showAlert("The action Record menu is turned off.");
 } else {
 	await app.showAlert("The action Record menu is turned on.");
