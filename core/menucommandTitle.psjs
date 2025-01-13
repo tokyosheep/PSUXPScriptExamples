@@ -1,0 +1,35 @@
+/*
+Checking action record status, whether it turned on or not.
+The method, getMenuCommandTitle returns specific name of command name.
+Some manu command changed its title in specific context, like action record,
+but the title depends on the local environment.
+This script an example of code, how to get command title and 
+local command language environment as well.
+
+You can check local manu title in the file below.
+
+Mac
+/Applications/Adobe Photoshop 2025/Locales/ja_JP/Support Files/tw10428_Photoshop_ja_JP.dat
+
+Win
+C:\Program Files\Adobe\Adobe Photoshop 2025\Locales\ja_JP\Support Files/tw10428_Photoshop_ja_JP.dat
+
+References
+https://forums.creativeclouddeveloper.com/t/how-can-i-programmatically-enable-and-disable-extras/6251/1
+
+https://developer.adobe.com/photoshop/uxp/2022/ps_reference/media/photoshopcore/#translateuistring
+*/
+const { core, app } = require("photoshop");
+
+const ACTION_RECORD_TITLE = 1174;
+
+const startRecordTitle = core.translateUIString("$$$/Menu/Actions/RecordAction");
+const stopRecordingTitle = core.translateUIString("$$$/ActionsPalette/StopRecording");
+
+const currentTitle = await core.getMenuCommandTitle({ commandID: ACTION_RECORD_TITLE });
+
+if (currentTitle === stopRecordingTitle) {
+	await app.showAlert("The action Record menu is turned off.");
+} else {
+	await app.showAlert("The action Record menu is turned on.");
+}

@@ -1,0 +1,17 @@
+/*
+core module performMenuCommand method invokes the command from command ID
+It is able to find the command ID through Alchemist plugin
+*/
+const { core, app } = require("photoshop");
+
+// Make a selection which covers an open document.
+const COMMAND_MANU = 1017;
+
+// Check whether the menu command is available or not.
+const flag = await core.getMenuCommandState({ commandID: COMMAND_MANU});
+
+if (flag) {
+	await core.performMenuCommand({ commandID: COMMAND_MANU });
+} else {
+	await app.showAlert("The command is unavailable at the moment.")
+}
